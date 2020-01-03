@@ -157,7 +157,7 @@ class ServerManager extends BaseServerManager
         if (method_exists($this->protocol, 'onMasterStart')) {
             $this->protocol->onMasterStart($serv);
         }
-        ServerManager::$eventManager->trigger("consulServiceRegister");
+        self::$config['consulRegister'] && ServerManager::$eventManager->trigger("consulServiceRegister");
     }
 
     function onMasterStop($serv)
@@ -165,7 +165,7 @@ class ServerManager extends BaseServerManager
         if (!empty(self::$config['server']['pid_file'])) {
             @unlink(self::$pidFile);
         }
-        ServerManager::$eventManager->trigger("consulServiceDestroy");
+        self::$config['consulRegister'] && ServerManager::$eventManager->trigger("consulServiceDestroy");
         if (method_exists($this->protocol, 'onMasterStop')) {
             $this->protocol->onMasterStop($serv);
         }
