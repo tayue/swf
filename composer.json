@@ -10,7 +10,7 @@
     ],
     "require": {
         "smarty/smarty": "^3.1",
-        "mtdowling/cron-expression": "dev-master",
+        "mtdowling/cron-expression": "v1.2.3",
         "predis/predis": "^2.0@dev",
         "php": ">=7.0.0"
     },
