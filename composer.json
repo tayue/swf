@@ -1,0 +1,22 @@
+{
+    "name": "tayue/swf",
+    "description": "swoole study framework",
+    "type": "library",
+    "authors": [
+        {
+            "name": "tayueliuxiang",
+            "email": "tayueliuxiang1@sina.com"
+        }
+    ],
+    "require": {
+        "smarty/smarty": "^3.1",
+        "mtdowling/cron-expression": "dev-master",
+        "predis/predis": "^2.0@dev"
+    },
+    "autoload": {
+        "psr-4": {
+            "Framework\\": "src/Framework"
+        }
+    }
+
+}
