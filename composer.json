@@ -12,7 +12,8 @@
         "smarty/smarty": "^3.1",
         "mtdowling/cron-expression": "v1.2.3",
         "predis/predis": "*",
-        "php": ">=7.0.0"
+        "php": ">=7.0.0",
+        "google/protobuf": "^3.11"
     },
     "autoload": {
         "psr-4": {
