@@ -343,9 +343,7 @@ class Client
             $streamId = $this->client->send($request);
         }
         if ($streamId > 0) {
-            $channel = new Channel(0);
-            $channel->push($this->client->recv(-1));
-            $this->recvChannelMap[$streamId] = $channel;
+            $this->recvChannelMap[$streamId] = self::$channelPool->get();
         }
 
         return $streamId;
