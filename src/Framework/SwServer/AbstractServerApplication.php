@@ -91,9 +91,9 @@ abstract class AbstractServerApplication extends BaseObject
         }
     }
 
-    public function parseUrl(\swoole_http_request $request, \swoole_http_response $response)
+    public function parseUrl(\swoole_http_request $request, \swoole_http_response $response,$isGrpcServer=false)
     {
-        Route::parseSwooleRouteUrl($request, $response);
+        Route::parseSwooleRouteUrl($request, $response,$isGrpcServer);
     }
 
     /**

@@ -30,4 +30,11 @@ class ServerApplication extends AbstractServerApplication
         $this->init();
         $this->parseRoute($messageData);
     }
+
+    public function grpcRun($fd, \swoole_http_request $request, \swoole_http_response $response)
+    {
+        $this->fd = $fd;
+        $this->init();
+        $this->parseUrl($request, $response,true);
+    }
 }

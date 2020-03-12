@@ -10,6 +10,7 @@ namespace Framework\SwServer;
 
 
 use Framework\SwServer\Protocol\WebServer;
+use Framework\SwServer\Protocol\GrpcServer;
 use Framework\SwServer\Protocol\WebSocketServer;
 use Framework\Tool\PluginManager;
 use Framework\Core\log\Log;
@@ -30,6 +31,7 @@ class ServerManager extends BaseServerManager
     use SingletonTrait, AppTrait;
     const TYPE_SERVER = 'SERVER';
     const TYPE_WEB_SERVER = 'WEB_SERVER';
+    const TYPE_GRPC_SERVER = 'GRPC_SERVER';
     const TYPE_WEB_SOCKET_SERVER = 'WEB_SOCKET_SERVER';
     public $protocol;
     public static $isWebServer = false;
@@ -84,6 +86,10 @@ class ServerManager extends BaseServerManager
                 self::$isWebServer = true;
                 $this->protocol = new WebServer(self::$config);
                 break;
+            case self::TYPE_GRPC_SERVER;
+                self::$isWebServer = true;
+                $this->protocol = new GrpcServer(self::$config);
+                break;    
             case self::TYPE_WEB_SOCKET_SERVER;
                 self::$isWebServer = true;
                 self::$isWebSocketServer = true;

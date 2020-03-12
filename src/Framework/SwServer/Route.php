@@ -10,6 +10,7 @@ namespace Framework\SwServer;
 
 use Framework\Core\DependencyInjection;
 use Framework\SwServer\Common\ProtocolCommon;
+use Framework\SwServer\Grpc\Parser;
 use Framework\SwServer\ServerManager;
 use Framework\SwServer\Coroutine\CoroutineManager;
 use Framework\SwServer\RateLimit\RateLimit;
@@ -28,7 +29,7 @@ class Route
         return $return;
     }
 
-    public static function parseSwooleRouteUrl(\swoole_http_request $request, \swoole_http_response $response)
+    public static function parseSwooleRouteUrl(\swoole_http_request $request, \swoole_http_response $response, $isGrpcServer = false)
     {
         try {
             $msg = '';
@@ -88,7 +89,7 @@ class Route
                 }
             }
             if ($request->server['request_method'] == 'POST') { //POST请求
-                $_POST = $request->post;
+                $_POST = $request->post ? $request->post : [];
                 $_REQUEST = array_merge($_REQUEST, $_POST);
             }
 
@@ -127,18 +128,25 @@ class Route
             } else {
                 $classNameSpacePath = sprintf("%s\\Controller\\%s", $appNameSpace, $urlController);
             }
-
             if (\method_exists($classNameSpacePath, $urlAction)) {
                 $method = new \ReflectionMethod($classNameSpacePath, $urlAction);
                 if ($method->isPublic() && !$method->isStatic()) {
                     try {
-                        $res=RateLimit::getInstance()->minLimit($classNameSpacePath."::".$urlAction,function (){
-                            echo "Rate Limit:".date("Y-m-d H:i:s")."\r\n";
+                        $res = RateLimit::getInstance()->minLimit($classNameSpacePath . "::" . $urlAction, function () {
+                            echo "Rate Limit:" . date("Y-m-d H:i:s") . "\r\n";
                         });
-                        if(!$res['flag']){
-                            throw  new \Exception($res['msg']."\r\n");
+                        if (!$res['flag']) {
+                            throw  new \Exception($res['msg'] . "\r\n");
                         }
-                        DependencyInjection::make($classNameSpacePath, $urlAction);
+                        if (!$isGrpcServer) {
+                            DependencyInjection::make($classNameSpacePath, $urlAction);
+                        } else {
+                            $response_message = DependencyInjection::grpcMake($classNameSpacePath, $urlAction, $request->rawContent());
+                            $response->header('content-type', 'application/grpc');
+                            $response->header('trailer', 'grpc-status, grpc-message');
+                            $response->end(Parser::serializeMessage($response_message));
+                        }
+
                     } catch (\ReflectionException $e) {
                         throw new \Exception($e->getMessage(), 1);
                     } catch (\Throwable $t) { //将致命错误捕捉到进行错误类型转换

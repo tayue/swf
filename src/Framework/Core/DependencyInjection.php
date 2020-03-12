@@ -6,6 +6,8 @@
 namespace Framework\Core;
 
 use Framework\SwServer\Pool\DiPool;
+use Google\Protobuf\Internal\Message;
+use Framework\SwServer\Grpc\Parser;
 
 class DependencyInjection
 {
@@ -15,6 +17,15 @@ class DependencyInjection
         $instance = self::getInstance($className);
         // 获取该方法所需要依赖注入的参数
         $paramArr = self::resolveClassMethodDependencies($className, $methodName);
+        return $instance->{$methodName}(...array_merge($paramArr, $params));
+    }
+
+    public static function grpcMake($className, $methodName, $rawContent,$params = [])
+    {
+        // 获取类的实例
+        $instance = self::getInstance($className);
+        // 获取该方法所需要依赖注入的参数
+        $paramArr = self::resolveGrpcClassMethodDependencies($className, $rawContent,$methodName);
         return $instance->{$methodName}(...array_merge($paramArr, $params));
     }
 
@@ -44,6 +55,33 @@ class DependencyInjection
                 $parameters[] = DiPool::getInstance()->registerObject($paramClassName, ['class' => $paramClassName], $paramClassParams);
             }
 
+        }
+        return $parameters;
+    }
+
+    public static function resolveGrpcClassMethodDependencies($className,$rawContent, $method = '__construct')
+    {
+        $parameters = []; // 记录参数，和参数类型
+        if (!\method_exists($className, $method)) {
+            return $parameters;
+        }
+        // 获得构造函数
+        $reflector = new \ReflectionMethod($className, $method);
+        if (count($reflector->getParameters()) <= 0) {
+            return $parameters;
+        }
+        foreach ($reflector->getParameters() as $key => $parameter) {
+            $currentParamsReflectionClass = $parameter->getClass();
+            if ($currentParamsReflectionClass) {
+                // 获得参数类型名称
+                $paramClassName = $currentParamsReflectionClass->getName();
+                $currentObject = DiPool::getInstance()->registerObject($paramClassName, ['class' => $paramClassName], []);
+                if ($currentObject instanceof Message) {
+                    $request_message = Parser::deserializeMessage([$paramClassName, null], $rawContent);
+                    $parameters[] = $request_message;
+                }
+
+            }
         }
         return $parameters;
     }
