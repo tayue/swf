@@ -26,6 +26,9 @@ class DependencyInjection
         $instance = self::getInstance($className);
         // 获取该方法所需要依赖注入的参数
         $paramArr = self::resolveGrpcClassMethodDependencies($className, $rawContent,$methodName);
+        if(!$paramArr){
+            return [];
+        }
         return $instance->{$methodName}(...array_merge($paramArr, $params));
     }
 
@@ -67,7 +70,7 @@ class DependencyInjection
         }
         // 获得构造函数
         $reflector = new \ReflectionMethod($className, $method);
-        if (count($reflector->getParameters()) <= 0) {
+        if (count($reflector->getParameters()) != 1) { //grpc Action里方法参数必须有一个Grpc请求对象参数
             return $parameters;
         }
         foreach ($reflector->getParameters() as $key => $parameter) {

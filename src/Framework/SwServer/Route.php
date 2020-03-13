@@ -142,6 +142,12 @@ class Route
                             DependencyInjection::make($classNameSpacePath, $urlAction);
                         } else {
                             $response_message = DependencyInjection::grpcMake($classNameSpacePath, $urlAction, $request->rawContent());
+                            if(!$response_message && is_array($response_message)){
+                                $response->header('grpc-status', 500);
+                                $response->header('statusCode', 500);
+                                $response->header('grpc-message', "error request !");
+                                $response->end("error request !");
+                            }
                             $response->header('content-type', 'application/grpc');
                             $response->header('trailer', 'grpc-status, grpc-message');
                             $response->end(Parser::serializeMessage($response_message));

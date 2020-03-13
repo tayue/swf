@@ -30,8 +30,9 @@ class GrpcServer extends WebServer
 
     public function __construct($config)
     {
+        //grpc server 需开启 http2 协议
+        $config['server']['setting']['open_http2_protocol']=true;
         parent::__construct($config);
-
     }
 
 
