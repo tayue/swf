@@ -14,6 +14,8 @@ class ServerApplication extends AbstractServerApplication
     {
         $this->fd = $fd;
         $this->init();
+        ServerManager::getApp()->request=$request;
+        ServerManager::getApp()->response=$response;
         $this->parseUrl($request, $response);
     }
 
@@ -35,6 +37,8 @@ class ServerApplication extends AbstractServerApplication
     {
         $this->fd = $fd;
         $this->init();
+        ServerManager::getApp()->request=$request;
+        ServerManager::getApp()->response=$response;
         $this->parseUrl($request, $response,true);
     }
 }
