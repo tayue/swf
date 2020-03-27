@@ -91,6 +91,12 @@ class Route
             if ($request->server['request_method'] == 'POST') { //POST请求
                 $_POST = $request->post ? $request->post : [];
                 $_REQUEST = array_merge($_REQUEST, $_POST);
+            }else{
+                if(is_array(ServerManager::getApp()->request->get) && ServerManager::getApp()->request->get){
+                    ServerManager::getApp()->request->get=array_merge(ServerManager::getApp()->request->get, $_GET);
+                }else{
+                    ServerManager::getApp()->request->get=$_REQUEST;
+                }
             }
 
             if (!$validate) {
