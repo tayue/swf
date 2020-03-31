@@ -144,6 +144,7 @@ class Route
                         if (!$res['flag']) {
                             throw  new \Exception($res['msg'] . "\r\n");
                         }
+
                         if (!$isGrpcServer) {
                             DependencyInjection::make($classNameSpacePath, $urlAction);
                         } else {

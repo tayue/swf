@@ -11,25 +11,40 @@ use Framework\SwServer\Grpc\Parser;
 
 class DependencyInjection
 {
+    public static $currentInstance;
+
     public static function make($className, $methodName, $params = [])
     {
         // 获取类的实例
-        $instance = self::getInstance($className);
+        self::$currentInstance = self::getInstance($className);
+        // 执行初始化方法
+        self::checkInitFunc();
         // 获取该方法所需要依赖注入的参数
         $paramArr = self::resolveClassMethodDependencies($className, $methodName);
-        return $instance->{$methodName}(...array_merge($paramArr, $params));
+        return self::$currentInstance->{$methodName}(...array_merge($paramArr, $params));
+    }
+
+    public static function checkInitFunc(){
+        $controllerInstance = new \ReflectionClass(self::$currentInstance);
+        //检测控制器初始化方法
+        if ($controllerInstance->hasMethod('init')) {
+            $initMethod = new \ReflectionMethod(self::$currentInstance, 'init');
+            if ($initMethod->isPublic()) {
+                $initMethod->invoke(self::$currentInstance);
+            }
+        }
     }
 
     public static function grpcMake($className, $methodName, $rawContent,$params = [])
     {
         // 获取类的实例
-        $instance = self::getInstance($className);
+        self::$currentInstance = self::getInstance($className);
         // 获取该方法所需要依赖注入的参数
         $paramArr = self::resolveGrpcClassMethodDependencies($className, $rawContent,$methodName);
         if(!$paramArr){
             return [];
         }
-        return $instance->{$methodName}(...array_merge($paramArr, $params));
+        return self::$currentInstance->{$methodName}(...array_merge($paramArr, $params));
     }
 
     public static function getInstance($className)
