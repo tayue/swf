@@ -10,6 +10,7 @@ namespace Framework\SwServer;
 use Framework\SwServer\Base\BaseObject;
 use Framework\SwServer\Http\HttpInput;
 use Framework\SwServer\ServerManager;
+use Framework\SwServer\Http\HttpOutput;
 
 class ServerController extends BaseObject
 {
@@ -20,7 +21,7 @@ class ServerController extends BaseObject
     public function init()
     {
         $this->httpInput=new HttpInput(ServerManager::getApp()->request);
-        //$this->httpOutput=new HttpInput(ServerManager::getApp()->response);
+        $this->httpOutput=new HttpOutput(ServerManager::getApp()->request,ServerManager::getApp()->response);
     }
 
     public function __call($name, $arguments='')
