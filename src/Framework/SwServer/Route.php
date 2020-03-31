@@ -32,6 +32,7 @@ class Route
     public static function parseSwooleRouteUrl(\swoole_http_request $request, \swoole_http_response $response, $isGrpcServer = false)
     {
         try {
+            $_GET=$_POST=$_REQUEST=[];
             $msg = '';
             $request_uri = $request->server['request_uri'];
             $validate = true;
