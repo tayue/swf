@@ -14,7 +14,8 @@
         "predis/predis": "*",
         "php": ">=7.1.0",
         "google/protobuf": "^3.11",
-        "voku/anti-xss": "^4.1"
+        "voku/anti-xss": "^4.1",
+        "guzzlehttp/guzzle": "^6.3"
     },
     "autoload": {
         "psr-4": {
