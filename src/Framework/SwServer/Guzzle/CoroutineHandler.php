@@ -1,5 +1,5 @@
 <?php
-namespace Framework\SwServer\Coroutine;
+namespace Framework\SwServer\Guzzle;
 
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
