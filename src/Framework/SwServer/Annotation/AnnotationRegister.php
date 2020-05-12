@@ -359,10 +359,10 @@ class AnnotationRegister
 
     public static function setClassPropertyAnnotation($className, $propertyName, $propertyObj)
     {
-        echo "@@@@@@@@@@@@@@@@@@@@@@@@start setClassPropertyAnnotation@@@@@@@@@@@@@@@@@@@@@@@@\r\n";
+
         $propertyAnnotationKey = $className . "->" . $propertyName;
         self::$classPropertyAnnotations[$propertyAnnotationKey] = $propertyObj;
-        echo "@@@@@@@@@@@@@@@@@@@@@@@@end setClassPropertyAnnotation@@@@@@@@@@@@@@@@@@@@@@@@\r\n";
+        echo "@@@@@@@@@@@@@@@@@@@@@@@@ setClassPropertyAnnotation {$propertyAnnotationKey} @@@@@@@@@@@@@@@@@@@@@@@@\r\n";
     }
 
     public static function getClassPropertyAnnotations()
@@ -421,19 +421,18 @@ class AnnotationRegister
 
     public static function setAspectClassAnnotation($className, AroundInterface $aspectAnnotationObj)
     {
-        echo "##########start setAspectClassAnnotation##########\r\n";
+        echo "########################## setAspectClassAnnotation {$className} ##########################\r\n";
         self::$aspectAnnotations[$className][] = $aspectAnnotationObj;
-        echo "##########end setAspectClassAnnotation##########\r\n";
+
     }
 
     public static function setAspectClassMethodAnnotation($className, $methodName, AroundInterface $aspectMethodAnnotationObj)
     {
-        echo "---------------start setAspectClassMethodAnnotation-------------------\r\n";
         $aspectMethodKey = $className . "::" . $methodName;
         if (!isset(self::$aspectAnnotations[$aspectMethodKey]) || !in_array($aspectMethodAnnotationObj, self::$aspectAnnotations[$aspectMethodKey])) {
+            echo "--------------- setAspectClassMethodAnnotation {$aspectMethodKey} -------------------\r\n";
             self::$aspectAnnotations[$aspectMethodKey][] = $aspectMethodAnnotationObj;
         }
-        echo "---------------end setAspectClassMethodAnnotation-------------------\r\n";
     }
 
 
