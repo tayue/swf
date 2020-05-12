@@ -23,6 +23,7 @@ abstract class AbstractServerApplication extends BaseObject
     public $coroutine_id;
     public $fd;
     public $header = null;
+    private static $container=null;
 
     public function __construct()
     {
@@ -36,7 +37,7 @@ abstract class AbstractServerApplication extends BaseObject
         $this->setTimeZone(ServerManager::$config['timeZone']);
         (isset(ServerManager::$config['log']) && ServerManager::$config['log']) && Log::getInstance()->setConfig(ServerManager::$config['log']);
         Db::setConfig(ServerManager::$config['components']['db']['config']);
-        DiPool::getInstance();
+        self::$container=DiPool::getInstance();
     }
 
     public function init()
@@ -190,6 +191,10 @@ abstract class AbstractServerApplication extends BaseObject
                 parent::__get($name);
             }
         }
+    }
+
+    public static function getContainer(){
+        return self::$container;
     }
 
     use ServerTrait;

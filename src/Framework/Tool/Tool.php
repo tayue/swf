@@ -123,4 +123,9 @@ class Tool
 
         return $json;
     }
+
+    public static function returnValueOrCallback($value)
+    {
+        return $value instanceof \Closure ? $value() : $value;
+    }
 }
