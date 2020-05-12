@@ -24,20 +24,22 @@ class ProxyVisitor extends NodeVisitorAbstract
 
     protected $proxyId;
 
-    public function __construct($className, $proxyId)
+    protected $suffix='Aop';
+
+    public function __construct($className, $suffix='')
     {
         $this->className = $className;
-        $this->proxyId = $proxyId;
+        $suffix && $this->suffix = $suffix;
     }
 
     public function getProxyClassName(): string
     {
-        return \basename(str_replace('\\', '/', $this->className)) . '_' . $this->proxyId;
+        return \basename(str_replace('\\', '/', $this->className)) .  $this->suffix;
     }
 
     public function getClassName()
     {
-        return '\\' . $this->className . '_' . $this->proxyId;
+        return '\\' . $this->className .  $this->suffix;
     }
 
     private function getAopTraitUseNode(): TraitUse

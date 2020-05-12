@@ -84,6 +84,5 @@ class DiPool
             return false;
         }
     }
-
     use ComponentTrait, ServiceTrait, ContainerTrait;
 }

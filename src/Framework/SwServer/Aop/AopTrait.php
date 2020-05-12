@@ -5,6 +5,7 @@ namespace Framework\SwServer\Aop;
 
 
 use Framework\SwServer\Annotation\AnnotationRegister;
+use Framework\SwServer\Pool\DiPool;
 
 
 trait AopTrait
@@ -29,17 +30,10 @@ trait AopTrait
     private static function handleAround(ProceedingJoinPoint $proceedingJoinPoint)
     {
         $aspects = AnnotationRegister::getAspectObjs($proceedingJoinPoint->className, $proceedingJoinPoint->methodName);
-        //$aspects = array_unique(array_merge($aspects, $annotationAspects));
         if (empty($aspects)) {
             return $proceedingJoinPoint->processOriginalMethod();
         }
-
-//        $container = ApplicationContext::getContainer();
-//        if (method_exists($container, 'make')) {
-//            $pipeline = $container->make(Pipeline::class);
-//        } else {
-        $pipeline = new PipelineAop();
-        // }
+        $pipeline=DiPool::getInstance()->register(PipelineAop::class);
         return $pipeline->via('process')
             ->through($aspects)
             ->send($proceedingJoinPoint)

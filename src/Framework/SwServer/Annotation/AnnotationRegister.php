@@ -430,7 +430,7 @@ class AnnotationRegister
     {
         echo "---------------start setAspectClassMethodAnnotation-------------------\r\n";
         $aspectMethodKey = $className . "::" . $methodName;
-        if (!in_array($aspectMethodAnnotationObj, self::$aspectAnnotations[$aspectMethodKey])) {
+        if (!isset(self::$aspectAnnotations[$aspectMethodKey]) || !in_array($aspectMethodAnnotationObj, self::$aspectAnnotations[$aspectMethodKey])) {
             self::$aspectAnnotations[$aspectMethodKey][] = $aspectMethodAnnotationObj;
         }
         echo "---------------end setAspectClassMethodAnnotation-------------------\r\n";

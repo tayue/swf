@@ -1,15 +1,13 @@
 <?php
 
 namespace Framework\SwServer\Aop;
+
+use Framework\SwServer\Annotation\AnnotationRegister;
 use Framework\SwServer\Annotation\ComposerHelper;
+use Framework\SwServer\Pool\DiPool;
 
 class ProxyFactory
 {
-    /**
-     * @var array
-     */
-    private static $map = [];
-
     /**
      * @var Ast
      */
@@ -21,21 +19,26 @@ class ProxyFactory
     }
 
 
-    public function loadProxy(string $className, string $proxyClassName = ''): void
+    public function loadProxy(string $className): void
     {
-        $dir = RUNTIME_PATH . '/container/proxy/';
-        if (!file_exists($dir)) {
-            mkdir($dir, 0755, true);
+        $file = ComposerHelper::getClassLoader()->findFile($className);
+        if (!$file) {
+            return;
         }
-        $proxyFileName = str_replace('\\', '_', $className);
-        $path = $dir . $proxyFileName . '.proxyAop.php';
-        // If the proxy file does not exist, then try to acquire the coroutine lock.
-        if (!file_exists($path)) {
-            $targetPath = $path . '.' . uniqid();
-            $code = $this->ast->proxy($className, $proxyClassName);
-            file_put_contents($targetPath, $code);
-            rename($targetPath, $path);
-         }
+        $sourceClassPath = realpath(dirname($file));
+        if (!is_dir($sourceClassPath)) {
+            return;
+        }
+        $sourceFileFixTime = filemtime($file);
+        $proxyClassName = $className . "Aop";
+        $path = ROOT_PATH . DIRECTORY_SEPARATOR . str_replace('\\', '/', $className) . "Aop.php";
+        $targetFileFixTime = filemtime($path);
+        if (!file_exists($path) || $sourceFileFixTime > $targetFileFixTime) {
+            $code = $this->ast->proxy($className);
+            file_put_contents($path, $code);
+            DiPool::getInstance()->register($proxyClassName, [], true);
+            AnnotationRegister::getInstance()->parseAnnotationForClass($proxyClassName);
+        }
         include_once $path;
     }
 }
