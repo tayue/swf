@@ -5,6 +5,7 @@ namespace Framework\SwServer\Annotation;
 
 use App\Aop\ProxyFactoryDemo;
 use Doctrine\Common\Annotations\AnnotationRegistry;
+use Framework\SwServer\Annotation\ComposerHelper;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Framework\SwServer\Annotation\Contract\AnnotationLoaderInterface;
 use Framework\Traits\SingletonTrait;
@@ -12,6 +13,7 @@ use Composer\Autoload\ClassLoader;
 use Framework\SwServer\Aop\Contract\AroundInterface;
 use Framework\SwServer\Pool\DiPool;
 use Framework\SwServer\Annotation\Contract\AnnotationBeanInterface;
+use mysql_xdevapi\Exception;
 use ReflectionClass;
 use function get_included_files;
 use DirectoryIterator;
@@ -568,7 +570,7 @@ class AnnotationRegister
     public static function Debug($config)
     {
         echo "---------------------Debug-------------------------\r\n";
-        print_r($config);
+        //print_r($config);
         echo "---------------------Debug-------------------------\r\n";
     }
 

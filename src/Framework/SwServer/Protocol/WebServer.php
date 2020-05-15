@@ -58,7 +58,7 @@ class WebServer extends BaseServer
     {
         //初始化应用层
         $app = new ServerApplication($this->config);
-        ServerManager::$serverApp = \serialize($app);
+        ServerManager::$serverApp = $app;
     }
 
     function onWorkerStop($server, $worker_id)
@@ -102,7 +102,7 @@ class WebServer extends BaseServer
             ob_start();
             $this->fd = $request->fd;
             if ($request->server['request_uri']) { //请求地址
-                $serverApp = \unserialize(ServerManager::$serverApp);
+                $serverApp = ServerManager::$serverApp;
                 $serverApp->run($this->fd,$request, $response);
             }
             ServerManager::destroy(); //销毁应用实例

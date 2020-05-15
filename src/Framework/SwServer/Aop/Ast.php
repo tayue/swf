@@ -43,7 +43,8 @@ class Ast
             return $stmts = $this->astParser->parse($code);
         });
         $traverser = new NodeTraverser();
-        $traverser->addVisitor(new ProxyVisitor($className));
+        $proxId = md5($className);
+        $traverser->addVisitor(new ProxyVisitorAop($className,$proxId));
         $modifiedStmts = $traverser->traverse($stmts);
         return $this->printer->prettyPrintFile($modifiedStmts);
     }

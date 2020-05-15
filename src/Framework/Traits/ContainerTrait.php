@@ -271,6 +271,14 @@ trait ContainerTrait
         return false;
     }
 
+    public function isSetSingleton($className){
+        $flag=false;
+        if (isset($this->_singletons[$className])) {
+            $flag=true;
+        }
+        return $flag;
+    }
+
     public function setSingletonByObject($class, $object)
     {
         if (isset($this->_singletons[$class])) unset($this->_singletons[$class]);

@@ -13,12 +13,7 @@ namespace Framework\Core;
 
 use Framework\Core\db\Query;
 
-/**
- * Class Model
- * @package Framework\Core
- * @mixin Query
- * @method \Framework\Core\Model withAttr(array $name,\Closure $closure) 动态定义获取器
- */
+
 abstract class Model implements \JsonSerializable, \ArrayAccess
 {
     use model\concern\Attribute;

@@ -67,14 +67,7 @@ class ProceedingJoinPoint
         $this->pipe = null;
         $closure = $this->originalMethod;
         $arguments = $this->arguments;
-//        if (count($this->arguments['keys']) > 1) {
-//            $arguments = $this->getArguments();
-//        } else {
-//            $arguments = array_values($this->arguments['keys']);
-//        }
-
         return $closure(...$arguments);
-
     }
 
 }
