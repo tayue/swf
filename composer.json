@@ -15,7 +15,9 @@
         "php": ">=7.1.0",
         "google/protobuf": "^3.11",
         "voku/anti-xss": "^4.1",
-        "guzzlehttp/guzzle": "^6.3"
+        "guzzlehttp/guzzle": "^6.3",
+		"doctrine/annotations": "^1.10",
+        "nikic/php-parser": "^4.1"
     },
     "autoload": {
         "psr-4": {
