@@ -10,6 +10,7 @@ use Framework\SwServer\Aop\AopProxyFactory;
 use Framework\Traits\ComponentTrait;
 use Framework\Traits\ContainerTrait;
 use Framework\Traits\ServiceTrait;
+use Framework\Traits\DaoTrait;
 
 class DiPool
 {
@@ -61,23 +62,26 @@ class DiPool
     {
         $this->initComponents();
         $this->initServices();
+        $this->initDaos();
     }
 
     public function checkGetProxy($name)
     {
-        $res=false;
-        $getSourceClassName='';
+        $res = false;
+        $getSourceClassName = '';
         if (isset($this->_components[$name])) {
             $getSourceClassName = $this->_components[$name];
+        } elseif (isset($this->_daos[$name])) {
+            $getSourceClassName = $this->_daos[$name];
         } elseif (isset($this->_services[$name])) {
             $getSourceClassName = $this->_services[$name];
         } else {
             class_exists($name) && $getSourceClassName = $name;
         }
-        if(!$getSourceClassName){
+        if (!$getSourceClassName) {
             return $res;
         }
-        if($this->register(AopProxyFactory::class)->getProxyClassName($getSourceClassName)){
+        if ($this->register(AopProxyFactory::class)->getProxyClassName($getSourceClassName)) {
             return $this->checkInitAopProxyClass($getSourceClassName);
         }
         return $res;
@@ -85,14 +89,21 @@ class DiPool
 
     public function get($name)
     {
-        if($proxyClassObj=$this->checkGetProxy($name)){ //如果发现存在代理类那么优先取代理类实例
-           return $proxyClassObj;
+        if ($proxyClassObj = $this->checkGetProxy($name)) { //如果发现存在代理类那么优先取代理类实例
+            return $proxyClassObj;
         }
         if ($componentObject = $this->getComponent($name)) {
             if ($componentObject) {
                 return $componentObject;
             } else {
                 $this->clearComponent($name);
+                return false;
+            }
+        } else if ($daoObject = $this->getDao($name)) {
+            if ($daoObject) {
+                return $daoObject;
+            } else {
+                $this->clearDao($name);
                 return false;
             }
         } else if ($serviceObject = $this->getService($name)) {
@@ -128,7 +139,6 @@ class DiPool
         $proxyClassName = $this->register(AopProxyFactory::class)->checkGetProxy($className);
         //检查此代理类是否在容器中初始化过
         if ($this->isSetSingleton($proxyClassName)) {
-            echo "{$proxyClassName} already set singleton !!\r\n";
             return $this->getSingleton($proxyClassName);
         }
         //通过类名获取
@@ -150,5 +160,5 @@ class DiPool
         return $proxyClassObj;
     }
 
-    use ComponentTrait, ServiceTrait, ContainerTrait;
+    use ComponentTrait, ServiceTrait, DaoTrait, ContainerTrait;
 }

@@ -120,7 +120,6 @@ class Route
                     $_action = ServerManager::getApp()->default_action;
                 }
             }
-
             $coroutineId = ServerManager::getApp()->coroutine_id;
             $_module && $_module = ucfirst($_module);
             $_module && ServerManager::$app[$coroutineId]->current_module = $_module;

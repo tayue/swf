@@ -18,7 +18,6 @@ class ProxyFactory
         $this->ast = new Ast();
     }
 
-
     public function loadProxy(string $className): void
     {
         $file = ComposerHelper::getClassLoader()->findFile($className);

@@ -7,6 +7,11 @@
  */
 
 namespace Framework\SwServer;
+use Framework\SwServer\Http\HttpJoinPoint;
+use Framework\SwServer\Http\PipelineHttpHandleAop;
+use Framework\SwServer\Coroutine\CoroutineManager;
+use Framework\SwServer\Pool\DiPool;
+use App\Middleware\TraceMiddleware;
 
 class ServerApplication extends AbstractServerApplication
 {
@@ -14,9 +19,23 @@ class ServerApplication extends AbstractServerApplication
     {
         $this->fd = $fd;
         $this->init();
-        ServerManager::getApp()->request=$request;
-        ServerManager::getApp()->response=$response;
-        $this->parseUrl($request, $response);
+        CoroutineManager::set('tracer.request',$request);
+        CoroutineManager::set('tracer.response',$response);
+
+        $httpJoinPoint=new HttpJoinPoint(function ()  {
+            $request = CoroutineManager::get('tracer.request');
+            $response = CoroutineManager::get('tracer.response');
+            ServerManager::getApp()->request=$request;
+            ServerManager::getApp()->response=$response;
+            return $this->parseUrl($request, $response);
+        });
+        $pipeline=DiPool::getInstance()->register(PipelineHttpHandleAop::class);
+        return $pipeline->via('process')
+            ->through($this->httpMiddlewares)
+            ->send($httpJoinPoint)
+            ->then(function (HttpJoinPoint $proceedingJoinPoint) {
+                return $proceedingJoinPoint->processOriginalMethod();
+            });
     }
 
     public function tcpRun($fd, $recv)
@@ -37,6 +56,8 @@ class ServerApplication extends AbstractServerApplication
     {
         $this->fd = $fd;
         $this->init();
+        CoroutineManager::set('tracer.request',$request);
+        CoroutineManager::set('tracer.response',$response);
         ServerManager::getApp()->request=$request;
         ServerManager::getApp()->response=$response;
         $this->parseUrl($request, $response,true);

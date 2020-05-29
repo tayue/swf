@@ -16,7 +16,10 @@ use Framework\SwServer\Aop\ProxyFactory;
 use Framework\SwServer\Coroutine\CoroutineManager;
 use Framework\Core\Db;
 use Framework\SwServer\Base\BaseObject;
+use Framework\SwServer\Guzzle\ClientFactory;
 use Framework\SwServer\Pool\DiPool;
+use Framework\SwServer\Tracer\HttpClientFactory;
+use Framework\SwServer\Tracer\TracerFactory;
 use Framework\Traits\ServerTrait;
 use Framework\SwServer\Protocol\TcpServer;
 use Framework\SwServer\Annotation\AnnotationRegister;
@@ -26,6 +29,7 @@ abstract class AbstractServerApplication extends BaseObject
     public $coroutine_id;
     public $fd;
     public $header = null;
+    public $httpMiddlewares=[];
 
     public function __construct()
     {
@@ -39,8 +43,25 @@ abstract class AbstractServerApplication extends BaseObject
         $this->setTimeZone(ServerManager::$config['timeZone']);
         (isset(ServerManager::$config['log']) && ServerManager::$config['log']) && Log::getInstance()->setConfig(ServerManager::$config['log']);
         Db::setConfig(ServerManager::$config['components']['db']['config']);
+        $this->initTracker();
         $this->annotationRegister();
         DiPool::getInstance()->initAspectAopAnnotationClass();
+        $this->httpMiddlewares=$this->getHttpMiddlewares();
+    }
+
+    protected function getHttpMiddlewares(){
+        $httpMiddlewares=[];
+        (isset(ServerManager::$config['httpMiddlewares']) && ServerManager::$config['httpMiddlewares']) && $configHttpMiddlewares=ServerManager::$config['httpMiddlewares'];
+        if(!$configHttpMiddlewares){
+            return $httpMiddlewares;
+        }
+        foreach ($configHttpMiddlewares as $httpMiddleware){
+            if(DiPool::getInstance()->isSetSingleton($httpMiddleware)){
+                $tmpMiddleware = DiPool::getInstance()->getSingleton($httpMiddleware);
+                if($tmpMiddleware && is_object($tmpMiddleware)) $httpMiddlewares[] = $tmpMiddleware;
+            }
+        }
+        return $httpMiddlewares;
     }
 
     public function init()
@@ -48,6 +69,13 @@ abstract class AbstractServerApplication extends BaseObject
         $this->coroutine_id = CoroutineManager::getInstance()->getCoroutineId();
         ServerManager::getInstance()->coroutine_id = $this->coroutine_id;
         $this->setApp();
+    }
+
+    private function initTracker(){
+        $container=DiPool::getInstance();
+        $container->setSingletonByObject(ClientFactory::class,new ClientFactory($container));
+        $container->setSingletonByObject(HttpClientFactory::class,new HttpClientFactory($container->getSingleton(ClientFactory::class)));
+        $container->setSingletonByObject(TracerFactory::class,new TracerFactory($container->getSingleton(HttpClientFactory::class)));
     }
 
     public function annotationRegister()
