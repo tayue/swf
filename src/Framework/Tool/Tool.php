@@ -128,4 +128,22 @@ class Tool
     {
         return $value instanceof \Closure ? $value() : $value;
     }
+
+    //解密 (通过RSA私钥解密key然后通过AES解密值)
+    public static function safeDecrypt($rsa_aes_key, $aes_data, $private_key)
+    {
+        $aes_key = RSA::decrypt($rsa_aes_key, $private_key);
+        $data = AES::decrypt($aes_data, $aes_key);
+        return $data;
+    }
+
+    //加密 (通过AES加密值,RSA公钥加密key)
+    public static function safeEncrypt($data, $aes_key, $public_key)
+    {
+        //先通过 AES 加密数据
+        $aes_data = AES::encrypt($data, $aes_key);
+        //通过 RSA 加密 AES 密钥
+        $rsa_aes_key = RSA::encrypt($aes_key, $public_key); //A用户数据用公钥加密
+        return compact('rsa_aes_key', 'aes_data');
+    }
 }
