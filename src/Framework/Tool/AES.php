@@ -21,7 +21,7 @@ class AES
             die('不支持该加密算法!');
         }
         // options为1, 不需要手动填充
-        //$plaintext = $this->padding($plaintext);
+        //$plaintext = self::padding($plaintext);
         // 获取加密算法要求的初始化向量的长度
         $ivlen = openssl_cipher_iv_length($method);
         // 生成对应长度的初始化向量. aes-128模式下iv长度是16个字节, 也可以自由指定.
@@ -46,7 +46,7 @@ class AES
             // 加密时未手动填充, 不需要去填充
             //if($plaintext)
             //{
-            //    $plaintext = $this->unpadding($plaintext);
+            //    $plaintext = self::unpadding($plaintext);
             //    echo $plaintext;
             //}
 

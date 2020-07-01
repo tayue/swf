@@ -13,7 +13,8 @@ use Composer\Autoload\ClassLoader;
 use Framework\SwServer\Aop\Contract\AroundInterface;
 use Framework\SwServer\Pool\DiPool;
 use Framework\SwServer\Annotation\Contract\AnnotationBeanInterface;
-use mysql_xdevapi\Exception;
+use Framework\SwServer\Router\Annotation\AbstractRouter;
+use Framework\SwServer\Router\Annotation\Mapping;
 use ReflectionClass;
 use function get_included_files;
 use DirectoryIterator;
@@ -78,6 +79,8 @@ class AnnotationRegister
     private static $annotations = [];
 
     private static $aspectAnnotations = [];
+
+    private static $routeAnnotations = [];
 
     private static $classPropertyAnnotations = [];
 
@@ -320,7 +323,7 @@ class AnnotationRegister
         $parseClassAnnotations = $reader->getClassAnnotations($reflectionClass);
         // Class annotation
         if (!empty($parseClassAnnotations)) {
-            self::checkGetAspectClassAnnotation($className, $parseClassAnnotations);
+            self::checkGetClassAnnotation($className, $parseClassAnnotations);
             $classAnnotations['annotation'] = $parseClassAnnotations;
             $classAnnotations['reflection'] = $reflectionClass;
         }
@@ -342,7 +345,7 @@ class AnnotationRegister
             $methodName = $reflectionMethod->getName();
             $methodAnnotations = $reader->getMethodAnnotations($reflectionMethod);
             if (!empty($methodAnnotations)) {
-                self::checkGetAspectMethodAnnotation($className, $methodName, $methodAnnotations);
+                self::checkGetMethodAnnotation($className, $methodName, $methodAnnotations);
                 $classAnnotations['methods'][$methodName]['annotation'] = $methodAnnotations;
                 $classAnnotations['methods'][$methodName]['reflection'] = $reflectionMethod;
             }
@@ -401,20 +404,24 @@ class AnnotationRegister
         DiPool::getInstance()->registerSingletonByObject($className, $classObj); //强制
     }
 
-    public static function checkGetAspectClassAnnotation($className, $annotations)
+    public static function checkGetClassAnnotation($className, $annotations)
     {
         foreach ($annotations as $annotation) {
             if ($annotation instanceof AroundInterface) {
                 self::setAspectClassAnnotation($className, $annotation);
+            }else if($annotation instanceof AbstractRouter){
+                self::setRouterControllerClassAnnotation($className,$annotation);
             }
         }
     }
 
-    public static function checkGetAspectMethodAnnotation($className, $methodName, $methodAnnotations)
+    public static function checkGetMethodAnnotation($className, $methodName, $methodAnnotations)
     {
         foreach ($methodAnnotations as $methodAnnotation) {
             if ($methodAnnotation instanceof AroundInterface) {
                 self::setAspectClassMethodAnnotation($className, $methodName, $methodAnnotation);
+            }else if($methodAnnotation instanceof Mapping){
+                self::setRouteClassMethodAnnotation($className, $methodName, $methodAnnotation);
             }
         }
     }
@@ -426,12 +433,27 @@ class AnnotationRegister
 
     }
 
+    public static function setRouterControllerClassAnnotation($className, $aspectAnnotationObj)
+    {
+        echo "########################## setRouterControllerClassAnnotation {$className} ##########################\r\n";
+        self::$routeAnnotations[$className]['class'] = $aspectAnnotationObj;
+    }
+
     public static function setAspectClassMethodAnnotation($className, $methodName, AroundInterface $aspectMethodAnnotationObj)
     {
         $aspectMethodKey = $className . "::" . $methodName;
         if (!isset(self::$aspectAnnotations[$aspectMethodKey]) || !in_array($aspectMethodAnnotationObj, self::$aspectAnnotations[$aspectMethodKey])) {
             echo "--------------- setAspectClassMethodAnnotation {$aspectMethodKey} -------------------\r\n";
             self::$aspectAnnotations[$aspectMethodKey][] = $aspectMethodAnnotationObj;
+        }
+    }
+
+    public static function setRouteClassMethodAnnotation($className, $methodName, $routeMethodAnnotationObj)
+    {
+        $methodKey = $methodName;
+        if (!isset(self::$routeAnnotations[$className]['methods'][$methodKey]) || ($routeMethodAnnotationObj != self::$routeAnnotations[$className]['methods'][$methodKey])) {
+            echo "--------------- setRouteClassMethodAnnotation {$methodKey} -------------------\r\n";
+            self::$routeAnnotations[$className]['methods'][$methodKey] = $routeMethodAnnotationObj;
         }
     }
 
@@ -442,6 +464,14 @@ class AnnotationRegister
     public static function getAnnotations(): array
     {
         return self::$annotations;
+    }
+
+    /**
+     * @return array
+     */
+    public static function getRouteAnnotations(): array
+    {
+        return self::$routeAnnotations;
     }
 
     /**

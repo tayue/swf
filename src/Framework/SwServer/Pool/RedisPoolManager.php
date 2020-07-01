@@ -32,9 +32,6 @@ class RedisPoolManager extends PoolBase
     {
         try {
             $redis = new Redis($this->config);
-            if (!ServerManager::$isEnableRuntimeCoroutine) { //没有开启运行时协程那么自动切换到协程mysql客户端
-                $redis = $redis->selectRedis();
-            }
             $redis=$redis->getConnection();
             if (!$redis) {
                 //连接失败，抛弃常
@@ -45,6 +42,11 @@ class RedisPoolManager extends PoolBase
             return false;
         }
         return $redis;
+    }
+
+    public static function checkIsConnection($connection){
+        $isConnection=true;
+        return $isConnection;
     }
 
     public function __construct($config = [])

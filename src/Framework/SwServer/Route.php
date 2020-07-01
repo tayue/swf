@@ -138,12 +138,12 @@ class Route
                 $method = new \ReflectionMethod($classNameSpacePath, $urlAction);
                 if ($method->isPublic() && !$method->isStatic()) {
                     try {
-                        $res = RateLimit::getInstance()->minLimit($classNameSpacePath . "::" . $urlAction, function () {
-                            echo "Rate Limit:" . date("Y-m-d H:i:s") . "\r\n";
-                        });
-                        if (!$res['flag']) {
-                            throw  new \Exception($res['msg'] . "\r\n");
-                        }
+//                        $res = RateLimit::getInstance()->minLimit($classNameSpacePath . "::" . $urlAction, function () {
+//                            echo "Rate Limit:" . date("Y-m-d H:i:s") . "\r\n";
+//                        });
+//                        if (!$res['flag']) {
+//                            throw  new \Exception($res['msg'] . "\r\n");
+//                        }
 
                         if (!$isGrpcServer) {
                             DependencyInjection::make($classNameSpacePath, $urlAction);

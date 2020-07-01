@@ -86,12 +86,6 @@ class CoroutineManager
         // 大于4.x版本,建议使用版本
         if ($this->canEnableCoroutine()) {
             $cid = SwCoroutine::getuid();
-            // 在task|process中不直接支持使用协程
-            if ($cid == -1) {
-                $cid = self::PREFIX_CID . 'task_process';
-            } else {
-                $cid = self::PREFIX_CID . $cid;
-            }
             return $cid;
         } else {
             // 1.x, 2.x版本不能使用协程，2.x编译时需要关闭协程选项

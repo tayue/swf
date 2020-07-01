@@ -7,6 +7,7 @@
  */
 
 namespace Framework\SwServer\Pool;
+
 use Swoole\Coroutine\Channel;
 
 class PoolBase implements Pool
@@ -39,14 +40,54 @@ class PoolBase implements Pool
      * @param $data
      * @desc 放入一个Resource连接入池
      */
-    public function put($data)
+    public function put($connection)
     {
         $flag = false;
-        if ($data) {
-            $flag = $this->pool->push($data);
+        if ($connection) {
+            $resourceData = [
+                'last_used_time' => time(),
+                'resource' => $connection
+            ];
+            $flag = $this->pool->push($resourceData);
         }
         return $flag;
+    }
 
+    /**
+     * @param $connection
+     * @desc 放入一个资源接入池
+     */
+    public function putResource($resource)
+    {
+        $flag = false;
+        if ($resource) {
+            $flag = $this->pool->push($resource);
+        }
+        return $flag;
+    }
+
+    private function popByChannel($timeout)
+    {
+        $time = time();
+        $connectionData = [];
+        while (!$this->pool->isEmpty()) {
+            $connectionData = $this->pool->pop($timeout);
+            $lastTime = $connectionData['last_used_time'];
+            $connectionResource = $connectionData['resource'];
+            $isConnection = static::checkIsConnection($connectionResource);
+            // Out of `maxIdleTime`
+            if (($time - $lastTime > $this->spaceTime) || !$isConnection) {
+                $this->currentConnectionNum--;
+                continue;
+            }
+            return $connectionData;
+        }
+
+        if ($this->currentConnectionNum < $this->max) { //当前资源连接数小于最大连接数时可以继续创建资源
+            $connectionData = $this->createResource();
+            $this->currentConnectionNum++;
+        }
+        return $connectionData;
     }
 
     /**
@@ -65,7 +106,7 @@ class PoolBase implements Pool
                     $resourceData = $this->pool->pop($timeout); //如果连接池子的连接资源都已经耗尽且当前资源连接数达到最大值，那么此时阻塞等待资源入池
                 }
             } else {
-                $resourceData = $this->pool->pop($timeout);
+                $resourceData = $this->popByChannel($timeout);
             }
             if (!$resourceData) {
                 throw new \Exception("get resource timeout\r\n");
@@ -74,7 +115,7 @@ class PoolBase implements Pool
             echo $e->getMessage();
             return false;
         }
-        return $resourceData;
+        return $resourceData['resource'];
     }
 
     /**
@@ -101,7 +142,7 @@ class PoolBase implements Pool
             for ($i = 0; $i < $this->min; $i++) {
                 $resourceObj = $this->createResource();
                 $this->currentConnectionNum++;
-                $this->put($resourceObj);
+                $this->putResource($resourceObj);
             }
         } catch (\Exception $e) {
             echo $e->getMessage() . "\r\n";
@@ -127,8 +168,10 @@ class PoolBase implements Pool
                 if (!$this->pool->isEmpty()) {
                     $obj = $this->pool->pop(0.001);
                     $last_used_time = $obj['last_used_time'];
+                    $connectionResource = $obj['resource'];
+                    $isConnection = static::checkIsConnection($connectionResource);
                     $diffTimes = time() - $last_used_time;
-                    if ($this->currentConnectionNum > $this->min && ($diffTimes > $this->spaceTime)) {//回收
+                    if ($this->currentConnectionNum > $this->min && ($diffTimes > $this->spaceTime) || !$isConnection) {//回收
                         $this->currentConnectionNum--;
                     } else {
                         array_push($list, $obj);
@@ -138,7 +181,7 @@ class PoolBase implements Pool
                 }
             }
             foreach ($list as $eachResourceData) {
-                $this->put($eachResourceData);
+                $this->putResource($eachResourceData);
             }
             $currentResourceLength = $this->getLength();
             echo "------End Colletion Idle Connections[{$currentResourceLength}]------" . PHP_EOL;
@@ -154,7 +197,7 @@ class PoolBase implements Pool
         $res = $this->checkConnection();
         if ($res == false) {
             //连接失败，抛弃常
-            throw new Exception("failed to connect resource server.");
+            throw new \Exception("failed to connect resource server.");
         } else {
             $resourceData = [
                 'last_used_time' => time(),

@@ -23,7 +23,7 @@ class RateLimit
                 RedisPoolManager::getInstance()->put($resourceData);
                 echo "[" . date('Y-m-d H:i:s') . "] Current Use Redis Connetction Look Nums:" . RedisPoolManager::getInstance()->getLength() . ",currentNum:" . RedisPoolManager::getInstance()->getCurrentConnectionNums() . PHP_EOL;
             });
-            $this->redis = $resourceData['resource'];
+            $this->redis = $resourceData;
         }
         if (!$this->redis) {
             throw new \Exception("No Active Redis Connection !");

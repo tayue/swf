@@ -9,6 +9,7 @@
 namespace Framework\SwServer;
 
 
+use Framework\SwServer\Pool\RabbitPoolManager;
 use Framework\SwServer\Protocol\WebServer;
 use Framework\SwServer\Protocol\GrpcServer;
 use Framework\SwServer\Protocol\WebSocketServer;
@@ -182,7 +183,7 @@ class ServerManager extends BaseServerManager
         echo "" . date("Y-m-d H:i:s") . " onWorkerStart\r\n";
         self::clearCache();
         // 记录主进程加载的公共files,worker重启不会在加载的
-        self::getIncludeFiles();
+        //self::getIncludeFiles();
         // 启动时提前加载文件
         self::startInclude();
         // 记录worker的进程worker_pid与worker_id的映射
@@ -195,6 +196,7 @@ class ServerManager extends BaseServerManager
             $this->setProcessName($this->getProcessName() . ': worker');
             MysqlPoolManager::getInstance(self::$config['mysql_pool'])->clearSpaceResources();
             RedisPoolManager::getInstance(self::$config['redis_pool'])->clearSpaceResources();
+            RabbitPoolManager::getInstance(self::$config['rabbit_pool'])->clearSpaceResources();
         }
         if (method_exists($this->protocol, 'onStart')) {
             $this->protocol->onStart($server, $worker_id);

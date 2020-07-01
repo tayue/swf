@@ -14,7 +14,7 @@ class DES
         $ivlen = openssl_cipher_iv_length($method);
         $iv = openssl_random_pseudo_bytes($ivlen);
         // 按64bit一组填充明文
-        //$plaintext = $this->padding($plaintext);
+        //$plaintext = self::padding($plaintext);
         // 加密数据. 如果options参数为0, 则不再需要上述的填充操作. 如果options参数为1, 也不需要上述的填充操作, 但是返回的密文未经过base64编码. 如果options参数为2, 虽然PHP说明是自动0填充, 但实际未进行填充, 必须需要上述的填充操作进行手动填充. 上述手动填充的结果和options为0和1是自动填充的结果相同.
         $ciphertext = openssl_encrypt($plaintext, $method, $key, 1, $iv);
         // 生成hash
@@ -41,7 +41,7 @@ class DES
             // 去除填充数据. 加密时进行了填充才需要去填充
             //if($plaintext)
             //{
-            //    $plaintext = $this->unpadding($plaintext);
+            //    $plaintext = self::unpadding($plaintext);
             //    echo $plaintext;
             //}
             return $plaintext;

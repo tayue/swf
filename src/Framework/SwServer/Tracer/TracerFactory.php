@@ -12,9 +12,6 @@ use Framework\SwServer\ServerManager;
 
 class TracerFactory
 {
-    /**
-     * @var HttpClientFactory
-     */
     private $clientFactory;
 
     public function __construct(HttpClientFactory $clientFactory)

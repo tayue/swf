@@ -29,6 +29,7 @@ class ServerApplication extends AbstractServerApplication
             ServerManager::getApp()->response=$response;
             return $this->parseUrl($request, $response);
         });
+        $this->httpMiddlewares=[];
         $pipeline=DiPool::getInstance()->register(PipelineHttpHandleAop::class);
         return $pipeline->via('process')
             ->through($this->httpMiddlewares)
