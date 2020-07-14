@@ -46,6 +46,9 @@ class RedisPoolManager extends PoolBase
 
     public static function checkIsConnection($connection){
         $isConnection=true;
+//        if(!$connection->isConnected()){
+//            $isConnection=false;
+//        }
         return $isConnection;
     }
 

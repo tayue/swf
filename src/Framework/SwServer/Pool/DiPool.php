@@ -128,7 +128,7 @@ class DiPool
         foreach ($aspectAns as $aspectKey => $eachAspectAn) {
             @list($className, $methodName) = explode("::", $aspectKey);
             if (AnnotationRegister::checkIsHasAspectAnnotation($className, $methodName)) {
-                echo "{$className} has aspect annotation #########\r\n";
+                //echo "{$className} has aspect annotation #########\r\n";
                 $this->checkInitAopProxyClass($className);
             }
         }

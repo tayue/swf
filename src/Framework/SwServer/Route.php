@@ -11,10 +11,15 @@ namespace Framework\SwServer;
 use Framework\Core\DependencyInjection;
 use Framework\SwServer\Common\ProtocolCommon;
 use Framework\SwServer\Grpc\Parser;
+use Framework\SwServer\Pool\DiPool;
+use Framework\SwServer\Router\DispatcherFactory;
 use Framework\SwServer\ServerManager;
 use Framework\SwServer\Coroutine\CoroutineManager;
 use Framework\SwServer\RateLimit\RateLimit;
-
+use FastRoute\Dispatcher;
+use Exception;
+use Throwable;
+use ReflectionMethod;
 
 class Route
 {
@@ -32,7 +37,7 @@ class Route
     public static function parseSwooleRouteUrl(\swoole_http_request $request, \swoole_http_response $response, $isGrpcServer = false)
     {
         try {
-            $_GET=$_POST=$_REQUEST=[];
+            $_GET = $_POST = $_REQUEST = [];
             $msg = '';
             $request_uri = $request->server['request_uri'];
             $validate = true;
@@ -92,11 +97,11 @@ class Route
             if ($request->server['request_method'] == 'POST') { //POST请求
                 $_POST = $request->post ? $request->post : [];
                 $_REQUEST = array_merge($_REQUEST, $_POST);
-            }else{
-                if(is_array(ServerManager::getApp()->request->get) && ServerManager::getApp()->request->get){
-                    ServerManager::getApp()->request->get=array_merge(ServerManager::getApp()->request->get, $_GET);
-                }else{
-                    ServerManager::getApp()->request->get=$_REQUEST;
+            } else {
+                if (is_array(ServerManager::getApp()->request->get) && ServerManager::getApp()->request->get) {
+                    ServerManager::getApp()->request->get = array_merge(ServerManager::getApp()->request->get, $_GET);
+                } else {
+                    ServerManager::getApp()->request->get = $_REQUEST;
                 }
             }
 
@@ -134,7 +139,7 @@ class Route
             } else {
                 $classNameSpacePath = sprintf("%s\\Controller\\%s", $appNameSpace, $urlController);
             }
-            if (\method_exists($classNameSpacePath, $urlAction)) {
+            if (method_exists($classNameSpacePath, $urlAction)) {
                 $method = new \ReflectionMethod($classNameSpacePath, $urlAction);
                 if ($method->isPublic() && !$method->isStatic()) {
                     try {
@@ -149,7 +154,7 @@ class Route
                             DependencyInjection::make($classNameSpacePath, $urlAction);
                         } else {
                             $response_message = DependencyInjection::grpcMake($classNameSpacePath, $urlAction, $request->rawContent());
-                            if(!$response_message && is_array($response_message)){
+                            if (!$response_message && is_array($response_message)) {
                                 $response->header('grpc-status', 500);
                                 $response->header('statusCode', 500);
                                 $response->header('grpc-message', "error request !");
@@ -160,25 +165,23 @@ class Route
                             $response->end(Parser::serializeMessage($response_message));
                         }
 
-                    } catch (\ReflectionException $e) {
-                        throw new \Exception($e->getMessage(), 1);
-                    } catch (\Throwable $t) { //将致命错误捕捉到进行错误类型转换
+                    } catch (Throwable $t) { //将致命错误捕捉到进行错误类型转换
                         $msg = 'Fatal error: ' . $t->getMessage() . ' on ' . $t->getFile() . ' on line ' . $t->getLine();
-                        throw new \Exception($msg, 1);
+                        throw new Exception($msg, 1);
                     }
 
                 } else {
-                    throw new \Exception('class method ' . $urlAction . ' is static or private, protected property, can not be object call!', 1);
+                    throw new Exception('class method ' . $urlAction . ' is static or private, protected property, can not be object call!', 1);
                 }
             } else {
-                throw new \Exception("404");
+                throw new Exception("404");
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $response->end($e->getMessage());
-            throw new \Exception($e->getMessage(), 1);
-        } catch (\Throwable $t) {
+            throw new Exception($e->getMessage(), 1);
+        } catch (Throwable $t) {
             $response->end($msg);
-            throw new \Exception($t->getMessage(), 1);
+            throw new Exception($t->getMessage(), 1);
         }
 
     }
@@ -261,6 +264,67 @@ class Route
                 $value[$key] = addslashes($val);
             }
         }
+    }
+
+    public static function dispatch(\swoole_http_request $request, \swoole_http_response $response, $isGrpcServer = false)
+    {
+        $request_uri = $request->server['request_uri'];
+        $df = DiPool::getInstance()->getSingleton(DispatcherFactory::class);
+        $httpMethod = $request->server['request_method'];
+        $dispatcher = $df->getDispatcher();
+        $uri = rawurldecode($request_uri);
+        $uri = rawurldecode($uri);
+        $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
+
+        try {
+            switch ($routeInfo[0]) {
+                case Dispatcher::NOT_FOUND:
+                    throw new Exception("404 Not Found 没找到对应的方法");
+                    break;
+                case Dispatcher::METHOD_NOT_ALLOWED:
+                    $allowedMethods = $routeInfo[1];
+                    throw new Exception("405 Method Not Allowed方法不允许,允许" . join(",", $allowedMethods));
+                    break;
+                case Dispatcher::FOUND: // 找到对应的方法
+                    $handler = $routeInfo[1]; // 获得处理函数
+                    $vars = $routeInfo[2]; // 获取请求参数
+                    if (is_array($handler->callback)) { //如果是对象
+                        list($controller, $action) = $handler->callback; //路由实际应用
+                    } else {
+                        list($controller, $action) = explode("@", $handler->callback); //路由实际应用
+                    }
+                    if (class_exists($controller)) {
+                        if (method_exists($controller, $action)) {
+                            if (!$isGrpcServer) {
+                                DependencyInjection::make($controller, $action, $vars);
+                            } else {
+                                $response_message = DependencyInjection::grpcMake($controller, $action, $request->rawContent(), $vars);
+                                if (!$response_message && is_array($response_message)) {
+                                    $response->header('grpc-status', 500);
+                                    $response->header('statusCode', 500);
+                                    $response->header('grpc-message', "error request !");
+                                    $response->end("error request !");
+                                }
+                                $response->header('content-type', 'application/grpc');
+                                $response->header('trailer', 'grpc-status, grpc-message');
+                                $response->end(Parser::serializeMessage($response_message));
+                            }
+
+                        } else {
+                            new Exception("class no exists action!!!!");
+                        }
+                    } else {
+                        new Exception("class no exists!!!!");
+                    }
+                    break;
+            }
+
+        } catch (Throwable $e) {
+            $response->end($e->getMessage());
+            throw new Exception($e->getMessage(), 1);
+        }
+
+
     }
 
 }

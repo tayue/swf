@@ -8,6 +8,8 @@ namespace Framework\Core;
 use Framework\SwServer\Pool\DiPool;
 use Google\Protobuf\Internal\Message;
 use Framework\SwServer\Grpc\Parser;
+use ReflectionClass;
+use ReflectionMethod;
 
 class DependencyInjection
 {
@@ -21,27 +23,29 @@ class DependencyInjection
         self::checkInitFunc();
         // 获取该方法所需要依赖注入的参数
         $paramArr = self::resolveClassMethodDependencies($className, $methodName);
-        return self::$currentInstance->{$methodName}(...array_merge($paramArr, $params));
+        $params = array_values(array_merge($paramArr, $params));
+        return self::$currentInstance->{$methodName}(...$params);
     }
 
-    public static function checkInitFunc(){
-        $controllerInstance = new \ReflectionClass(self::$currentInstance);
+    public static function checkInitFunc()
+    {
+        $controllerInstance = new ReflectionClass(self::$currentInstance);
         //检测控制器初始化方法
         if ($controllerInstance->hasMethod('init')) {
-            $initMethod = new \ReflectionMethod(self::$currentInstance, 'init');
+            $initMethod = new ReflectionMethod(self::$currentInstance, 'init');
             if ($initMethod->isPublic()) {
                 $initMethod->invoke(self::$currentInstance);
             }
         }
     }
 
-    public static function grpcMake($className, $methodName, $rawContent,$params = [])
+    public static function grpcMake($className, $methodName, $rawContent, $params = [])
     {
         // 获取类的实例
         self::$currentInstance = self::getInstance($className);
         // 获取该方法所需要依赖注入的参数
-        $paramArr = self::resolveGrpcClassMethodDependencies($className, $rawContent,$methodName);
-        if(!$paramArr){
+        $paramArr = self::resolveGrpcClassMethodDependencies($className, $rawContent, $methodName);
+        if (!$paramArr) {
             return [];
         }
         return self::$currentInstance->{$methodName}(...array_merge($paramArr, $params));
@@ -60,7 +64,7 @@ class DependencyInjection
             return $parameters;
         }
         // 获得构造函数
-        $reflector = new \ReflectionMethod($className, $method);
+        $reflector = new ReflectionMethod($className, $method);
         if (count($reflector->getParameters()) <= 0) {
             return $parameters;
         }
@@ -77,14 +81,14 @@ class DependencyInjection
         return $parameters;
     }
 
-    public static function resolveGrpcClassMethodDependencies($className,$rawContent, $method = '__construct')
+    public static function resolveGrpcClassMethodDependencies($className, $rawContent, $method = '__construct')
     {
         $parameters = []; // 记录参数，和参数类型
-        if (!\method_exists($className, $method)) {
+        if (!method_exists($className, $method)) {
             return $parameters;
         }
         // 获得构造函数
-        $reflector = new \ReflectionMethod($className, $method);
+        $reflector = new ReflectionMethod($className, $method);
         if (count($reflector->getParameters()) != 1) { //grpc Action里方法参数必须有一个Grpc请求对象参数
             return $parameters;
         }

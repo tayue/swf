@@ -15,6 +15,8 @@ use Framework\SwServer\Pool\DiPool;
 use Framework\SwServer\Annotation\Contract\AnnotationBeanInterface;
 use Framework\SwServer\Router\Annotation\AbstractRouter;
 use Framework\SwServer\Router\Annotation\Mapping;
+use \Framework\SwServer\Rpc\Contract\RpcServiceRouterInterface;
+use Framework\SwServer\Rpc\Router\RouteRegister;
 use ReflectionClass;
 use function get_included_files;
 use DirectoryIterator;
@@ -323,7 +325,7 @@ class AnnotationRegister
         $parseClassAnnotations = $reader->getClassAnnotations($reflectionClass);
         // Class annotation
         if (!empty($parseClassAnnotations)) {
-            self::checkGetClassAnnotation($className, $parseClassAnnotations);
+            self::checkGetClassAnnotation($className, $parseClassAnnotations,$reflectionClass);
             $classAnnotations['annotation'] = $parseClassAnnotations;
             $classAnnotations['reflection'] = $reflectionClass;
         }
@@ -365,7 +367,7 @@ class AnnotationRegister
 
         $propertyAnnotationKey = $className . "->" . $propertyName;
         self::$classPropertyAnnotations[$propertyAnnotationKey] = $propertyObj;
-        echo "@@@@@@@@@@@@@@@@@@@@@@@@ setClassPropertyAnnotation {$propertyAnnotationKey} @@@@@@@@@@@@@@@@@@@@@@@@\r\n";
+        //echo "@@@@@@@@@@@@@@@@@@@@@@@@ setClassPropertyAnnotation {$propertyAnnotationKey} @@@@@@@@@@@@@@@@@@@@@@@@\r\n";
     }
 
     public static function getClassPropertyAnnotations()
@@ -404,13 +406,15 @@ class AnnotationRegister
         DiPool::getInstance()->registerSingletonByObject($className, $classObj); //强制
     }
 
-    public static function checkGetClassAnnotation($className, $annotations)
+    public static function checkGetClassAnnotation($className, $annotations,$reflectionClass)
     {
         foreach ($annotations as $annotation) {
             if ($annotation instanceof AroundInterface) {
                 self::setAspectClassAnnotation($className, $annotation);
             }else if($annotation instanceof AbstractRouter){
                 self::setRouterControllerClassAnnotation($className,$annotation);
+            }else if($annotation instanceof RpcServiceRouterInterface){
+                self::setRouterRpcServiceClassAnnotation($className,$annotation,$reflectionClass);
             }
         }
     }
@@ -428,14 +432,23 @@ class AnnotationRegister
 
     public static function setAspectClassAnnotation($className, AroundInterface $aspectAnnotationObj)
     {
-        echo "########################## setAspectClassAnnotation {$className} ##########################\r\n";
+        //echo "########################## setAspectClassAnnotation {$className} ##########################\r\n";
         self::$aspectAnnotations[$className][] = $aspectAnnotationObj;
 
     }
 
+    public static function setRouterRpcServiceClassAnnotation($className, $aspectAnnotationObj,$reflectionClass)
+    {
+        $interface=$reflectionClass->getInterfaceNames()[0];
+        if($interface && $className && $aspectAnnotationObj->getVersion()){
+            RouteRegister::register($interface,$aspectAnnotationObj->getVersion(),$className);
+            //echo "########################## setRouterRpcServiceClassAnnotation {$className} ##########################\r\n";
+        }
+    }
+
     public static function setRouterControllerClassAnnotation($className, $aspectAnnotationObj)
     {
-        echo "########################## setRouterControllerClassAnnotation {$className} ##########################\r\n";
+        //echo "########################## setRouterControllerClassAnnotation {$className} ##########################\r\n";
         self::$routeAnnotations[$className]['class'] = $aspectAnnotationObj;
     }
 
@@ -443,7 +456,7 @@ class AnnotationRegister
     {
         $aspectMethodKey = $className . "::" . $methodName;
         if (!isset(self::$aspectAnnotations[$aspectMethodKey]) || !in_array($aspectMethodAnnotationObj, self::$aspectAnnotations[$aspectMethodKey])) {
-            echo "--------------- setAspectClassMethodAnnotation {$aspectMethodKey} -------------------\r\n";
+            //echo "--------------- setAspectClassMethodAnnotation {$aspectMethodKey} -------------------\r\n";
             self::$aspectAnnotations[$aspectMethodKey][] = $aspectMethodAnnotationObj;
         }
     }
@@ -452,7 +465,7 @@ class AnnotationRegister
     {
         $methodKey = $methodName;
         if (!isset(self::$routeAnnotations[$className]['methods'][$methodKey]) || ($routeMethodAnnotationObj != self::$routeAnnotations[$className]['methods'][$methodKey])) {
-            echo "--------------- setRouteClassMethodAnnotation {$methodKey} -------------------\r\n";
+            //echo "--------------- setRouteClassMethodAnnotation {$methodKey} -------------------\r\n";
             self::$routeAnnotations[$className]['methods'][$methodKey] = $routeMethodAnnotationObj;
         }
     }
@@ -574,34 +587,34 @@ class AnnotationRegister
 
     public static function SkipFile($filename)
     {
-        echo nl2br("----------SkipFile:{$filename}\r\n");
+        //echo nl2br("----------SkipFile:{$filename}\r\n");
     }
 
     public static function RestrictedNamespace($namespace)
     {
-        echo nl2br("----------RestrictedNamespace:{$namespace}\r\n");
+        //echo nl2br("----------RestrictedNamespace:{$namespace}\r\n");
     }
 
     public static function NotLoaderClass($className)
     {
-        echo nl2br("----------NotLoaderClass:{$className}\r\n");
+        //echo nl2br("----------NotLoaderClass:{$className}\r\n");
     }
 
     public static function NotLoaderClassFile($file)
     {
-        echo nl2br("----------NotLoaderClassFile:{$file}\r\n");
+        //echo nl2br("----------NotLoaderClassFile:{$file}\r\n");
     }
 
     public static function NotOnlyScanNamespaces($ns)
     {
-        echo nl2br("!!!!!!!!!!!NotOnlyScanNamespaces:{$ns}\r\n");
+        //echo nl2br("!!!!!!!!!!!NotOnlyScanNamespaces:{$ns}\r\n");
     }
 
     public static function Debug($config)
     {
-        echo "---------------------Debug-------------------------\r\n";
+        //echo "---------------------Debug-------------------------\r\n";
         //print_r($config);
-        echo "---------------------Debug-------------------------\r\n";
+        //echo "---------------------Debug-------------------------\r\n";
     }
 
     public function parseAnnotationForClass(string $className)

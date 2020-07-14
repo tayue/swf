@@ -12,6 +12,7 @@ namespace Framework\SwServer;
 use Framework\SwServer\Pool\RabbitPoolManager;
 use Framework\SwServer\Protocol\WebServer;
 use Framework\SwServer\Protocol\GrpcServer;
+use Framework\SwServer\Protocol\RpcServer;
 use Framework\SwServer\Protocol\WebSocketServer;
 use Framework\Tool\PluginManager;
 use Framework\Core\log\Log;
@@ -26,6 +27,7 @@ use Framework\Traits\AppTrait;
 use Framework\SwServer\Protocol\Protocol;
 use Framework\SwServer\Crontab\CronRunner;
 use Framework\SwServer\Event\EventManager;
+use Framework\SwServer\Protocol\RpcListenerServer;
 
 class ServerManager extends BaseServerManager
 {
@@ -33,6 +35,7 @@ class ServerManager extends BaseServerManager
     const TYPE_SERVER = 'SERVER';
     const TYPE_WEB_SERVER = 'WEB_SERVER';
     const TYPE_GRPC_SERVER = 'GRPC_SERVER';
+    const TYPE_RPC_SERVER = 'RPC_SERVER';
     const TYPE_WEB_SOCKET_SERVER = 'WEB_SOCKET_SERVER';
     public $protocol;
     public static $isWebServer = false;
@@ -46,11 +49,11 @@ class ServerManager extends BaseServerManager
 
     private function __construct()
     {
-        self::$eventManager=new EventManager(); //全局的事件管理器
+        self::$eventManager = new EventManager(); //全局的事件管理器
         //注册consul 注册服务事件
-        self::$eventManager->attach("consulServiceRegister","App\Listener\RegisterConsulServiceListener");
+        self::$eventManager->attach("consulServiceRegister", "App\Listener\RegisterConsulServiceListener");
         //销毁consul 销毁服务事件
-        self::$eventManager->attach("consulServiceDestroy","App\Listener\DestroyConsulServiceListener");
+        self::$eventManager->attach("consulServiceDestroy", "App\Listener\DestroyConsulServiceListener");
     }
 
     public function setProtocol(Protocol $protocol)
@@ -77,7 +80,6 @@ class ServerManager extends BaseServerManager
         } else {
             self::$serviceType = self::TYPE_WEB_SERVER;
         }
-
         switch (self::$serviceType) {
             case self::TYPE_SERVER;
                 self::$isWebServer = false;
@@ -90,7 +92,11 @@ class ServerManager extends BaseServerManager
             case self::TYPE_GRPC_SERVER;
                 self::$isWebServer = true;
                 $this->protocol = new GrpcServer(self::$config);
-                break;    
+                break;
+            case self::TYPE_RPC_SERVER;
+                self::$isWebServer = false;
+                $this->protocol = new RpcServer(self::$config);
+                break;
             case self::TYPE_WEB_SOCKET_SERVER;
                 self::$isWebServer = true;
                 self::$isWebSocketServer = true;
@@ -102,6 +108,12 @@ class ServerManager extends BaseServerManager
         self::$server = $this->swoole_server;
         Sw::$server = self::$server;
         $this->registerDefaultEventCallback();
+        //设置监听Rpc服务端口
+        if (isset(self::$config['server']['listen']) && self::$config['server']['listen']) {
+            foreach (self::$config['server']['listen'] as $listenServerConfig) {
+                new RpcListenerServer($this->swoole_server, $listenServerConfig);
+            }
+        }
         ProcessManager::getInstance()->addProcess('CronRunner', CronRunner::class, true, Crontab::getInstance()->getTasks());
         (isset(self::$config['log']) && self::$config['log']) && Log::getInstance()->setConfig(self::$config['log']);
 

@@ -18,8 +18,14 @@ use Framework\Core\Db;
 use Framework\SwServer\Base\BaseObject;
 use Framework\SwServer\Guzzle\ClientFactory;
 use Framework\SwServer\Pool\DiPool;
+use Framework\SwServer\Rpc\Contract\RequestInterface;
+use Framework\SwServer\Rpc\Contract\ResponseInterface;
+use Framework\SwServer\Rpc\Exception\RpcException;
+use Framework\SwServer\Rpc\Router\Router;
+use Framework\SwServer\Rpc\Router\RouteRegister;
 use Framework\SwServer\Tracer\HttpClientFactory;
 use Framework\SwServer\Tracer\TracerFactory;
+use Framework\Tool\Tool;
 use Framework\Traits\ServerTrait;
 use Framework\SwServer\Protocol\TcpServer;
 use Framework\SwServer\Annotation\AnnotationRegister;
@@ -29,7 +35,7 @@ abstract class AbstractServerApplication extends BaseObject
     public $coroutine_id;
     public $fd;
     public $header = null;
-    public $httpMiddlewares=[];
+    public $httpMiddlewares = [];
 
     public function __construct()
     {
@@ -46,19 +52,22 @@ abstract class AbstractServerApplication extends BaseObject
         $this->initTracker();
         $this->annotationRegister();
         DiPool::getInstance()->initAspectAopAnnotationClass();
-        $this->httpMiddlewares=$this->getHttpMiddlewares();
+        $this->httpMiddlewares = $this->getHttpMiddlewares();
+        $router = DiPool::getInstance()->getSingleton(Router::class);
+        RouteRegister::registerRoutes($router);
     }
 
-    protected function getHttpMiddlewares(){
-        $httpMiddlewares=[];
-        (isset(ServerManager::$config['httpMiddlewares']) && ServerManager::$config['httpMiddlewares']) && $configHttpMiddlewares=ServerManager::$config['httpMiddlewares'];
-        if(!$configHttpMiddlewares){
+    protected function getHttpMiddlewares()
+    {
+        $httpMiddlewares = [];
+        (isset(ServerManager::$config['httpMiddlewares']) && ServerManager::$config['httpMiddlewares']) && $configHttpMiddlewares = ServerManager::$config['httpMiddlewares'];
+        if (!$configHttpMiddlewares) {
             return $httpMiddlewares;
         }
-        foreach ($configHttpMiddlewares as $httpMiddleware){
-            if(DiPool::getInstance()->isSetSingleton($httpMiddleware)){
+        foreach ($configHttpMiddlewares as $httpMiddleware) {
+            if (DiPool::getInstance()->isSetSingleton($httpMiddleware)) {
                 $tmpMiddleware = DiPool::getInstance()->getSingleton($httpMiddleware);
-                if($tmpMiddleware && is_object($tmpMiddleware)) $httpMiddlewares[] = $tmpMiddleware;
+                if ($tmpMiddleware && is_object($tmpMiddleware)) $httpMiddlewares[] = $tmpMiddleware;
             }
         }
         return $httpMiddlewares;
@@ -71,11 +80,12 @@ abstract class AbstractServerApplication extends BaseObject
         $this->setApp();
     }
 
-    private function initTracker(){
-        $container=DiPool::getInstance();
-        $container->setSingletonByObject(ClientFactory::class,new ClientFactory($container));
-        $container->setSingletonByObject(HttpClientFactory::class,new HttpClientFactory($container->getSingleton(ClientFactory::class)));
-        $container->setSingletonByObject(TracerFactory::class,new TracerFactory($container->getSingleton(HttpClientFactory::class)));
+    private function initTracker()
+    {
+        $container = DiPool::getInstance();
+        $container->setSingletonByObject(ClientFactory::class, new ClientFactory($container));
+        $container->setSingletonByObject(HttpClientFactory::class, new HttpClientFactory($container->getSingleton(ClientFactory::class)));
+        $container->setSingletonByObject(TracerFactory::class, new TracerFactory($container->getSingleton(HttpClientFactory::class)));
     }
 
     public function annotationRegister()
@@ -90,7 +100,6 @@ abstract class AbstractServerApplication extends BaseObject
             }
         ])->load();
     }
-
 
 
     public function setTimeZone($value)
@@ -140,7 +149,12 @@ abstract class AbstractServerApplication extends BaseObject
 
     public function parseUrl(\swoole_http_request $request, \swoole_http_response $response, $isGrpcServer = false)
     {
-        Route::parseSwooleRouteUrl($request, $response, $isGrpcServer);
+        if (ServerManager::$config['custom_routing']) {
+            Route::dispatch($request, $response, $isGrpcServer);
+        } else {
+            Route::parseSwooleRouteUrl($request, $response, $isGrpcServer);
+        }
+
     }
 
     /**
@@ -190,6 +204,38 @@ abstract class AbstractServerApplication extends BaseObject
         }
     }
 
+    public function parseRpcRoute(RequestInterface $request, ResponseInterface $response)
+    {
+        $version = $request->getVersion();
+        $interface = $request->getInterface();
+        $method = $request->getMethod();
+        $params = $request->getParams();
+        $router = DiPool::getInstance()->getSingleton(Router::class);
+        list($status, $className) = $router->match($version, $interface);
+        var_dump($status,$className);
+        if ($status != Router::FOUND) {
+            throw new RpcException(
+                sprintf('Route(%s-%s) is not founded!', $version, $interface)
+            );
+        }
+        $object = DiPool::getInstance()->getSingleton($className);
+        print_r($object);
+        if (!$object instanceof $interface) {
+            throw new RpcException(
+                sprintf('Object is not instanceof %s', $interface)
+            );
+        }
+        if (!method_exists($object, $method)) {
+            throw new RpcException(
+                sprintf('Method(%s::%s) is not founded!', $interface, $method)
+            );
+        }
+        $data = Tool::call([$object, $method], $params);print_r($data);
+        if ($data) {
+            $response->setData($data);
+            return $response->send();
+        }
+    }
 
     public function parseTcpRoute($receiveData)
     {

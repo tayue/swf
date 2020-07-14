@@ -31,7 +31,7 @@ class DispatcherFactory
         $this->initConfigRoute();
     }
 
-    public function getDispatcher(string $serverName): Dispatcher
+    public function getDispatcher(string $serverName='http'): Dispatcher
     {
         if (isset($this->dispatchers[$serverName])) {
             return $this->dispatchers[$serverName];

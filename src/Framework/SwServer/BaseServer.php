@@ -65,7 +65,7 @@ abstract class BaseServer implements Protocol
      * $isEnableCoroutine 是否启用协程
      * @var boolean
      */
-    public static $isEnableCoroutine = false;
+    public static $isEnableCoroutine = true;
 
     /**
      * $isEnableRuntimeCoroutine 是否开启运行时协程
