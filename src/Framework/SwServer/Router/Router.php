@@ -1,6 +1,7 @@
 <?php
 
 namespace Framework\SwServer\Router;
+use Framework\Tool\Tool;
 
 /**
  * @method static addRoute($httpMethod, string $route, $handler, array $options = [])
@@ -33,7 +34,7 @@ class Router
     public static function addServer(string $serverName, callable $callback)
     {
         static::$serverName = $serverName;
-        call($callback);
+        Tool::call($callback);
         static::$serverName = 'http';
     }
 
