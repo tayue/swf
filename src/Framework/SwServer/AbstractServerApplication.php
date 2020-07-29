@@ -212,14 +212,12 @@ abstract class AbstractServerApplication extends BaseObject
         $params = $request->getParams();
         $router = DiPool::getInstance()->getSingleton(Router::class);
         list($status, $className) = $router->match($version, $interface);
-        var_dump($status,$className);
         if ($status != Router::FOUND) {
             throw new RpcException(
                 sprintf('Route(%s-%s) is not founded!', $version, $interface)
             );
         }
         $object = DiPool::getInstance()->getSingleton($className);
-        print_r($object);
         if (!$object instanceof $interface) {
             throw new RpcException(
                 sprintf('Object is not instanceof %s', $interface)
@@ -230,7 +228,7 @@ abstract class AbstractServerApplication extends BaseObject
                 sprintf('Method(%s::%s) is not founded!', $interface, $method)
             );
         }
-        $data = Tool::call([$object, $method], $params);print_r($data);
+        $data = Tool::call([$object, $method], $params);
         if ($data) {
             $response->setData($data);
             return $response->send();

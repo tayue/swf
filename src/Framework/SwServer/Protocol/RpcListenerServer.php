@@ -24,7 +24,14 @@ class RpcListenerServer
 
     public function setting()
     {
-        $this->rpcPortListener->set(array('package_eof' => "\r\n"));
+
+        $this->rpcPortListener->set([
+
+           // 'open_eof_check' => true,
+            //'open_eof_split' => true,
+            'package_eof'    => "\r\n\r\n",
+
+        ]);
     }
 
 

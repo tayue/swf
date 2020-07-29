@@ -7,19 +7,22 @@ use Framework\SwServer\Consul\Agent;
 
 class Helper
 {
-    public static function registerService(string $serviceId,string $host,string $port)
+    public static function registerService(array $consulConfig, string $serviceId, string $host, string $port)
     {
+
         $json = '{
                   "ID": "' . $serviceId . '",
                   "Name": "' . $serviceId . '",
-                  "Address": "'.$host.'",
-                  "Port": '.$port.',
+                  "Address": "' . $host . '",
+                  "Port": ' . $port . ',
                   "EnableTagOverride": false
                }';
         $serivce = json_decode($json, true);
-        Agent::getInstance()->registerService($serivce);
+        Agent::getInstance($consulConfig)->registerService($serivce);
+
         return $serviceId;
     }
+
 
     public static function removeService(string $serviceId)
     {

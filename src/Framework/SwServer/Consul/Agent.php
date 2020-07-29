@@ -19,14 +19,22 @@ class Agent implements AgentInterface
     public $config;
     private $consul;
 
-    private function __construct($config)
+    public function __construct($config = [])
     {
-        if ($config['host'] && $config['port'] && $config['timeout']) {
-            $this->consul = new Consul($config['host'], $config['port'], $config['timeout']);
+        $this->createConsul($config);
+    }
+
+    public function createConsul($config)
+    {
+        if ($config) {
+            $this->config = array_merge($this->config, $config);
+        }
+        if ($this->config['host'] && $this->config['port'] && $this->config['timeout']) {
+            $this->consul = new Consul($this->config['host'], $this->config['port'], $this->config['timeout']);
         } else {
             $this->consul = new Consul();
         }
-        $this->config = $config;
+        return self::$instance;
     }
 
     /**
@@ -191,7 +199,7 @@ class Agent implements AgentInterface
      * @throws ServerException
      */
     public function registerService(array $service): Response
-    {
+    {print_r($service);
         $params = [
             'body' => $service,
         ];
