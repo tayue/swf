@@ -1,2 +1,19 @@
 # swf
-swoole study framework 
+swf是一个基于swoole扩展实现的轻量级高性能的常驻内存型的API和Web应用服务框架。
+swf的设计思想汲取了Tp5，Yii2，swooole-framework，easyswoole,swoft,hyperf等框架的优秀设计思想。并结合本人多年的技术积累以及实践经验，它不是最优秀的框架，但是这是一个适合学习swoole的框架。
+swf的核心特征
+支持composer的PSR-4规范
+支持httpServer,websocketServer,tcpServer,udpServer
+支持基于tcp实现的rpc服务采用JSON-RPC 2.0规范，开放式的系统接口,并提供协程化Rpc客户端组件
+支持容器，组件IOC
+支持热更新
+支持mysql的协程连接池，redis协程池，rabbitmq连接池，RPC协程客户端协程池
+异步务管理TaskManager,内存表管理TableManager，自定义进程管理ProcessManager，进程池管理PoolBase
+支持底层异常错误的日志捕捉
+支持自定义进程的redis，rabitmq的订阅发布，消息队列等
+支持crontab
+命令行形式封装启动|停止控制的脚本，简单命令即可管理整个框架
+服务注册(consul)
+GPRC的服务端和客户端
+调用链追踪简单实践
+配置中心,熔断限流等分布式下的组件未来主要实现
