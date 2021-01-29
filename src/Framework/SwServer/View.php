@@ -58,19 +58,25 @@ class View
     public function display($template_file = '')
     {
         $template_file = rtrim($template_file, '/');
-        $module = ServerManager::getModule();
-        $controller = ServerManager::getController();
-        $action = ServerManager::getAction();
         $fileType = ".html";
-        $projectType = ServerManager::getProjectType();
-        if (!$template_file) {
-            $template_file = $action . $fileType;
-        }
-        $filePath = SMARTY_TEMPLATE_PATH . '/' . $controller . '/' . $template_file;
-        $fetchFile = $controller . '/' . $template_file;
-        if ($projectType) {
-            $filePath = SMARTY_TEMPLATE_PATH . '/' . $module . '/' . $controller . '/' . $template_file;
-            $fetchFile = $module . '/' . $controller . '/' . $template_file;
+        if (!ServerManager::$config['custom_routing']) {
+            $module = ServerManager::getModule();
+            $controller = ServerManager::getController();
+            $action = ServerManager::getAction();
+
+            $projectType = ServerManager::getProjectType();
+            if (!$template_file) {
+                $template_file = $action . $fileType;
+            }
+            $filePath = SMARTY_TEMPLATE_PATH . '/' . $controller . '/' . $template_file;
+            $fetchFile = $controller . '/' . $template_file;
+            if ($projectType) {
+                $filePath = SMARTY_TEMPLATE_PATH . '/' . $module . '/' . $controller . '/' . $template_file;
+                $fetchFile = $module . '/' . $controller . '/' . $template_file;
+            }
+        } else {
+            $filePath = SMARTY_TEMPLATE_PATH . '/' . $template_file;
+            $fetchFile = $template_file;
         }
         if (is_file($filePath)) {
             $tpl = $this->smarty->fetch($fetchFile);

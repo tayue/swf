@@ -274,6 +274,12 @@ class Route
         $dispatcher = $df->getDispatcher();
         $uri = rawurldecode($request_uri);
         $uri = rawurldecode($uri);
+        //$coroutineId = ServerManager::getApp()->coroutine_id; //当前应用对象协程id
+//        $_module && $_module = ucfirst($_module);
+//        $_module && ServerManager::$app[$coroutineId]->current_module = $_module;
+//        $_controller && $_controller = ucfirst($_controller);
+//        $_controller && ServerManager::$app[$coroutineId]->current_controller = $_controller;
+//        $_action && ServerManager::$app[$coroutineId]->current_action = $_action;
         $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
 
         try {

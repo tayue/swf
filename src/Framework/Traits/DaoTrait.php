@@ -43,12 +43,7 @@ trait DaoTrait
             if (isset($defination['class'])) {
                 $class = $defination['class'];
                 if (!isset($this->_singletons[$class])) {
-                    $params = [];
-                    if (isset($defination['constructor'])) {
-                        $params = $defination['constructor'];
-                        unset($defination['constructor']);
-                    }
-                    $this->registerObject($com_alias_name, $defination, $params);
+                    $this->registerObject($com_alias_name, $defination);
                     $this->_daos[$com_alias_name] = $class;
                     return $this->_singletons[$class];
                 } else {
@@ -96,13 +91,8 @@ trait DaoTrait
                 continue;
             }
             if (isset($service['class']) && $service['class'] != '') {
-                $params = [];
-                if (isset($service['constructor'])) {
-                    $params = $service['constructor'];
-                    unset($service['constructor']);
-                }
                 $defination = $service;
-                $this->createDaoObject($com_name, $defination, $params);
+                $this->createDaoObject($com_name, $defination);
                 $this->_daos[$com_name] = $service['class'];
             }
         }

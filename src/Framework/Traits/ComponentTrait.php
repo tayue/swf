@@ -44,12 +44,7 @@ trait ComponentTrait
             if (isset($defination['class'])) {
                 $class = $defination['class'];
                 if (!isset($this->_singletons[$class])) {
-                    $params = [];
-                    if (isset($defination['constructor'])) {
-                        $params = $defination['constructor'];
-                        unset($defination['constructor']);
-                    }
-                    $this->registerObject($com_alias_name, $defination, $params);
+                    $this->registerObject($com_alias_name, $defination);
                     $this->_components[$com_alias_name] = $class;
                     return $this->_singletons[$class];
                 } else {
@@ -92,19 +87,15 @@ trait ComponentTrait
         // 配置文件初始化创建公用对象
         $coreComponents = $this->coreComponents();
         $components = array_merge($coreComponents, ServerManager::$config['components']);
+
         foreach ($components as $com_name => $component) {
             // 存在直接跳过
             if (isset($this->_components[$com_name])) {
                 continue;
             }
             if (isset($component['class']) && $component['class'] != '') {
-                $params = [];
-                if (isset($component['constructor'])) {
-                    $params = $component['constructor'];
-                    unset($component['constructor']);
-                }
                 $defination = $component;
-                $this->registerObject($com_name, $defination, $params);
+                $this->registerObject($com_name, $defination);
                 $this->_components[$com_name] = $component['class'];
             }
         }

@@ -50,7 +50,7 @@ class DispatcherFactory
         }
     }
 
-    public function getRouter(string $serverName): RouteCollector
+    public function getRouter(string $serverName='http'): RouteCollector
     {
         if (isset($this->routers[$serverName])) {
             return $this->routers[$serverName];

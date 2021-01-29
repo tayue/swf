@@ -22,7 +22,7 @@ class DependencyInjection
         // 执行初始化方法
         self::checkInitFunc();
         // 获取该方法所需要依赖注入的参数
-        $paramArr = self::resolveClassMethodDependencies($className, $methodName);
+        $paramArr = DiPool::getInstance()->resolveClassMethodDependencies($className, $methodName);
         $params = array_values(array_merge($paramArr, $params));
         return self::$currentInstance->{$methodName}(...$params);
     }
@@ -54,7 +54,11 @@ class DependencyInjection
     public static function getInstance($className)
     {
         $paramArr = self::resolveClassMethodDependencies($className);
-        return DiPool::getInstance()->registerObject($className, ['class' => $className], $paramArr);
+        $definitions = ['class' => $className];
+        if($paramArr){
+            $definitions['constructor'] = $paramArr;
+        }
+        return DiPool::getInstance()->registerObject($className, $definitions);
     }
 
     public static function resolveClassMethodDependencies($className, $method = '__construct')
@@ -74,7 +78,11 @@ class DependencyInjection
                 // 获得参数类型名称
                 $paramClassName = $currentParamsReflectionClass->getName();
                 $paramClassParams = self::resolveClassMethodDependencies($paramClassName);
-                $parameters[] = DiPool::getInstance()->registerObject($paramClassName, ['class' => $paramClassName], $paramClassParams);
+                $definitions = ['class' => $paramClassName];
+                if($paramClassParams){
+                    $definitions['constructor'] = $paramClassParams;
+                }
+                $parameters[] = DiPool::getInstance()->registerObject($paramClassName, $definitions);
             }
 
         }
@@ -97,7 +105,7 @@ class DependencyInjection
             if ($currentParamsReflectionClass) {
                 // 获得参数类型名称
                 $paramClassName = $currentParamsReflectionClass->getName();
-                $currentObject = DiPool::getInstance()->registerObject($paramClassName, ['class' => $paramClassName], []);
+                $currentObject = DiPool::getInstance()->registerObject($paramClassName, ['class' => $paramClassName]);
                 if ($currentObject instanceof Message) {
                     $request_message = Parser::deserializeMessage([$paramClassName, null], $rawContent);
                     $parameters[] = $request_message;

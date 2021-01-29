@@ -210,7 +210,7 @@ class ServerManager extends BaseServerManager
             self::$config['mysql_pool'] && MysqlPoolManager::getInstance(self::$config['mysql_pool'])->clearSpaceResources();
             self::$config['redis_pool'] && RedisPoolManager::getInstance(self::$config['redis_pool'])->clearSpaceResources();
             self::$config['rabbit_pool'] && RabbitPoolManager::getInstance(self::$config['rabbit_pool'])->clearSpaceResources();
-            self::$config['rpc_client_pool'] && RpcClientPoolManager::getInstance(self::$config['rpc_client_pool'])->clearSpaceResources();
+            isset(self::$config['rpc_client_pool']) && RpcClientPoolManager::getInstance(self::$config['rpc_client_pool'])->clearSpaceResources();
         }
 
         if (method_exists($this->protocol, 'onStart')) {

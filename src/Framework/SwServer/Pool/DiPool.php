@@ -8,15 +8,14 @@ namespace Framework\SwServer\Pool;
 use Framework\SwServer\Annotation\AnnotationRegister;
 use Framework\SwServer\Aop\AopProxyFactory;
 use Framework\Traits\ComponentTrait;
-use Framework\Traits\ContainerTrait;
 use Framework\Traits\ServiceTrait;
 use Framework\Traits\DaoTrait;
 
-class DiPool
+class DiPool extends BaseContainer implements \ArrayAccess
 {
     private static $instance;
 
-    private function __construct($args = [])
+    public function __construct($args = [])
     {
         $this->init($args);
     }
@@ -24,6 +23,37 @@ class DiPool
     private function __clone()
     {
         // TODO: Implement __clone() method.
+    }
+
+    public function offsetExists($offset)
+    {
+        return $this->has($offset);
+    }
+
+    public function offsetGet($offset)
+    {
+        return $this->get($offset);
+    }
+
+    public function offsetSet($offset, $value)
+    {
+        return $this->injection($offset, $value);
+    }
+
+    public function offsetUnset($offset)
+    {
+        $object = $this->get($offset);
+        if ($object) {
+            $namespaceClassName = get_class($object);
+            unset($this->_singletons[$namespaceClassName]);
+            unset($this->_params[$namespaceClassName]);
+            unset($object);
+        }
+        unset($this->_services[$offset]);
+        unset($this->_components[$offset]);
+        unset($this->_daos[$offset]);
+        unset($this->resolvedEntries[$offset]);
+        unset($this->definitions[$offset]);
     }
 
     public static function getInstance($args = [])
@@ -36,7 +66,9 @@ class DiPool
 
     public function register(string $class, array $params = [], $isForceInstance = false)
     {
-        $object = $this->registerObject($class, ['class' => $class], $params, $isForceInstance);
+        $defineds = ['class' => $class];
+        $defineds = array_merge($defineds, $params);
+        $object = $this->registerObject($class, $defineds);
         return $object;
     }
 
@@ -49,6 +81,12 @@ class DiPool
     public function registerService(string $com_alias_name, $classNamespace)
     {
         $object = $this->createServiceObject($com_alias_name, ['class' => $classNamespace]);
+        return $object;
+    }
+
+    public function registerDao(string $com_alias_name, $classNamespace)
+    {
+        $object = $this->createDaoObject($com_alias_name, ['class' => $classNamespace]);
         return $object;
     }
 
@@ -160,5 +198,7 @@ class DiPool
         return $proxyClassObj;
     }
 
-    use ComponentTrait, ServiceTrait, DaoTrait, ContainerTrait;
+    use ServiceTrait, ComponentTrait, DaoTrait;
+
+
 }

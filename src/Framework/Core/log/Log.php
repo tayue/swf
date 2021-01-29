@@ -37,7 +37,7 @@ class Log
 
     public function setConfig($config)
     {
-        $this->config = array_merge($this->config, $config);
+        $this->config = array_replace_recursive ($this->config, $config);
     }
 
     public function setLevel($level)
@@ -50,7 +50,7 @@ class Log
 
     function put($msg, $level = self::INFO)
     {
-        try {
+        try {print_r($this->config);
             if ($this->config['is_display']) {
                 echo $this->format($msg, $level);
             } else { //写入到日志里面

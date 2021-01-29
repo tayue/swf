@@ -6,7 +6,7 @@ namespace Framework\SwServer\Event;
  * Class EventManager
  * @package Framework\SwServer\Event
  */
-class EventManager implements EventManagerInterface
+class EventManager
 {
     // 通配符 - 所有触发的事件都会流过
     const MATCH_ALL = '*';
@@ -49,7 +49,7 @@ class EventManager implements EventManagerInterface
      * @param EventManagerInterface|null $parent
      * @throws \InvalidArgumentException
      */
-    public function __construct(EventManagerInterface $parent = null)
+    public function __construct( $parent = null)
     {
         if ($parent) {
             $this->parent = $parent;
